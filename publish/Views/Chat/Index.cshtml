@@ -1,0 +1,55 @@
+﻿@{
+    ViewBag.Title = "Chat";
+}
+@using Microsoft.AspNet.Identity;
+<div id="root" style="padding-top:20px; overflow-y:scroll; height:300px">
+    <div class="message">
+        <ul>
+        </ul>
+    </div>
+    
+</div>
+<div style="display: inline-flex">
+    <input type="text" id="send" class="form-control" />
+    <input type="button" id="btn-send" class="btn btn-primary" value="Gửi" />
+</div>
+
+<script src="~/Scripts/jquery.signalR-2.2.2.min.js"></script>
+<script src="~/signalr/hubs"></script>
+<script type="text/javascript">
+    let chat = $.connection.chatHub;
+    $("#send").focus();
+    chat.client.sendMessage = (message, time, name) => {
+        $(".message > ul").append(`<li><strong>${name} (${time})</strong>: ${message}</li>`);
+        scroll();
+    }
+    $.connection.hub.start().done(() => {
+        $("#btn-send").click(() => {
+            chat.server.message($("#send").val(), "@User.Identity.GetUserId()");
+            $("#send").val("");
+            $("#send").focus();
+            scroll();
+        })
+    })
+    $("#send").keypress(function (e) {
+        if (e.charCode === 13) $("#btn-send").trigger("click");
+        $("#send").focus();
+    })
+    $(document).ready(function () {
+        $.get("/api/chats", function (rs) {
+            rs.forEach((v, k) => {
+                $(".message > ul").append(`<li><strong>${v.Email} (${v.Time})</strong>: ${v.Content}</li>`);
+            });
+            scroll();
+        })
+        
+    })
+    function scroll() {
+        $(".message > ul").append("<input type='text' id='bottom' />");
+        $("#bottom").focus();
+        $("#bottom").remove();
+        $("#send").focus();
+    }
+
+</script>
+
